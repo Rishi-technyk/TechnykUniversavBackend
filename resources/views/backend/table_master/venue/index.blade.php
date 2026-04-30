@@ -1,0 +1,98 @@
+@extends('backend.layouts.app')
+
+@section('title', 'Admin | Venue Master')
+
+@section('style')
+
+@endsection
+
+@section('content')
+
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <section class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1>Venue Masters</h1>
+                </div>
+                <div class="col-sm-6 text-right">
+                    @can('table-venue.manage')
+                    <a href="{{ route('admin.table_venue.create') }}" class="btn btn-outline-info btn-sm"><i class="nav-icon fas fa-plus"></i> &nbsp;Create Venue</a>
+                    @endcan
+                </div>
+            </div>
+        </div><!-- /.container-fluid -->
+    </section>
+
+    <!-- Main content -->
+    <section class="content">
+        <div class="container-fluid">
+            <div class="row">
+                
+                <div class="col-12">
+
+                    <div class="card card-outline card-info">
+                        <!-- /.card-header -->
+                        <div class="card-body">
+                            <table id="example1" class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Status</th>
+                                        <th scope="col">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach($datas as $key => $data)
+                                    <tr>
+                                        <td>{{ $key + 1 }}</td>
+                                        <td>{{ $data->name }}</td>
+                                        <td>
+                                            @can('table-venue.status')
+                                                @if($data->status == "Active")
+                                                    <a href="{{ route('admin.table_venue.status', encrypt($data->id)) }}" onclick="return confirm('Do you want to deactivate the venue?')" class="btn btn-outline-success btn-sm">Active</a>
+                                                @else
+                                                    <a href="{{ route('admin.table_venue.status', encrypt($data->id)) }}" onclick="return confirm('Do you want to activate the venue?')" class="btn btn-outline-danger btn-sm">Inactive</a>
+                                                @endif
+                                            @else
+                                                <span class="badge badge-{{ $data->status == 'Active' ? 'success' : 'danger' }}">{{ $data->status }}</span>
+                                            @endcan
+                                        </td>
+                                        <td>
+                                            @can('table-venue.edit')
+                                            <a href="{{ route('admin.table_venue.edit', encrypt($data->id)) }}" class="btn btn-outline-info btn-sm" data-toggle="tooltip" data-original-title="Venue Edit">
+                                                Edit 
+                                            </a>
+                                            @endcan
+
+                                            @can('table-venue.delete')
+                                            &nbsp;
+                                            <a href="{{ route('admin.table_venue.delete', encrypt($data->id)) }}" class="btn btn-outline-danger btn-sm" data-toggle="tooltip" data-original-title="Delete Venue" onclick="return confirm('Are you sure?')">
+                                                Delete
+                                            </a>
+                                            @endcan
+                                        </td>
+                                    </tr>
+                                    @endforeach
+                            </table>
+                        </div>
+                        <!-- /.card-body -->
+                    </div>
+                    <!-- /.card -->
+                </div>
+                <!-- /.col -->
+            </div>
+            <!-- /.row -->
+        </div>
+        <!-- /.container-fluid -->
+    </section>
+    <!-- /.content -->
+</div>
+
+@endsection
+
+@section('script')
+
+@endsection

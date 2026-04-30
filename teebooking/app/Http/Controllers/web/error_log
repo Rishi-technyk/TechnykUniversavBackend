@@ -1,0 +1,5 @@
+[15-May-2024 11:11:47 UTC] PHP Warning:  require_once(./config.php): Failed to open stream: No such file or directory in /home/aept3433/teebooking.aepta.in/app/Http/Controllers/web/test.php on line 3
+[15-May-2024 11:11:47 UTC] PHP Fatal error:  Uncaught Error: Failed opening required './config.php' (include_path='.:/opt/cpanel/ea-php81/root/usr/share/pear') in /home/aept3433/teebooking.aepta.in/app/Http/Controllers/web/test.php:3
+Stack trace:
+#0 {main}
+  thrown in /home/aept3433/teebooking.aepta.in/app/Http/Controllers/web/test.php on line 3
