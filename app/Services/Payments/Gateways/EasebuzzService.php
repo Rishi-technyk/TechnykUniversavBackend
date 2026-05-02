@@ -23,6 +23,7 @@ class EasebuzzService extends AbstractPaymentGatewayService
 
     public function createOrder(Transaction $transaction, PaymentGateway $gateway, array $context = []): array
     {
+     
         $postData = [
             'key' => $gateway->key_id,
             'txnid' => $transaction->order_id,
@@ -68,6 +69,7 @@ class EasebuzzService extends AbstractPaymentGatewayService
                 'type' => 'hosted',
                 'provider' => $this->slug(),
                 'payment_url' => $this->checkoutUrl($transaction),
+                'hash' => $postData['hash'],
             ],
         ];
     }

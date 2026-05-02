@@ -114,7 +114,7 @@ class PaymentModuleSyncService
                     'WebhookResponse' => $transaction->webhook_response ?: '{}',
                     'OrderResponse' => $transaction->raw_response ?: '{}',
                     'TransactionID' => $reference ?: $transaction->order_id,
-                    'ImportStatus' => $transaction->import_flag ?? $transaction->Importflag ?? 0,
+                    'ImportStatus' => $transaction->ImportFlag ?? $transaction->Importflag ?? 0,
                     'RechargeDate' => now(),
                 ]);
         } else {
@@ -126,7 +126,7 @@ class PaymentModuleSyncService
                 'TxnRefrenceNo' => $transaction->order_id,
                 'BankRefrenceNo' => $reference,
                 'TransactionID' => $reference ?: $transaction->order_id,
-                'ImportStatus' => $transaction->import_flag ?? $transaction->Importflag ?? 0,
+                'ImportStatus' => $transaction->ImportFlag ?? $transaction->Importflag ?? 0,
                 'PaymentResponse' => $transaction->raw_response ?: $transaction->bank_response ?: '{}',
                 'OrderResponse' => $transaction->raw_response ?: '{}',
                 'TransactionType' => 'Card Recharge',

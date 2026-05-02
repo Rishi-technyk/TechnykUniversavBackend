@@ -1223,9 +1223,8 @@ public function getTransactionFilterNew(Request $request)
 
     {
 
-        $clubs = AffilatedClubs::with('phones') // Eager load phones relationship
-
-            ->orderBy('name', 'ASC')           // Order by club name
+        $clubs = AffilatedClubs:: // Eager load phones relationship
+orderBy('name', 'ASC')           // Order by club name
 
             ->get();   
 
@@ -1902,10 +1901,15 @@ public function createPayOrder(Request $request)
 
     } catch (\Exception $e) {
 
-        \Log::error('Card recharge order error', [
-            'error' => $e->getMessage()
-        ]);
-
+        // \Log::error('Card recharge order error', [
+        //     'error' => $e->getMessage()
+        // ]);
+\Log::error('Card recharge order error', [
+    'message' => $e->getMessage(),
+    'file' => $e->getFile(),
+    'line' => $e->getLine(),
+    'trace' => $e->getTraceAsString(),
+]);
         return response()->json([
             'status' => false,
             'message' => 'Unable to initiate payment'

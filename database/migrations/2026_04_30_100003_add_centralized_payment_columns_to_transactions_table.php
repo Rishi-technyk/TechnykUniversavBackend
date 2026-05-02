@@ -37,8 +37,8 @@ return new class extends Migration
                 $table->string('payment_status_code')->nullable()->after('payment_status');
             }
 
-            if (!Schema::hasColumn('transactions', 'import_flag')) {
-                $table->unsignedTinyInteger('import_flag')->default(1)->after('Importflag');
+            if (!Schema::hasColumn('transactions', 'ImportFlag')) {
+                $table->unsignedTinyInteger('ImportFlag')->default(1)->after('Importflag');
             }
 
             if (!Schema::hasColumn('transactions', 'module_reference_id')) {
@@ -70,7 +70,7 @@ return new class extends Migration
                 'raw_response',
                 'webhook_response',
                 'payment_status_code',
-                'import_flag',
+                'ImportFlag',
                 'module_reference_id',
                 'retry_count',
                 'processed_at',

@@ -28,7 +28,7 @@ class PaymentTransactionService
             ?? strtoupper(($context['prefix'] ?? 'PAY') . '_' . Str::upper(Str::random(18)));
 
         $transaction = Transaction::create(array_merge($columns, [
-            'member_id' => $member->MemberID ?: $member->SC_ID,
+            'member_id' =>  $member->SC_ID,
             'amount' => $amount,
             'order_id' => $internalOrderId,
             'transID' => $internalOrderId,
