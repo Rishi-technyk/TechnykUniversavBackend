@@ -101,6 +101,7 @@ return array(
     'App\\Models\\ActivityOccupantMaster' => $baseDir . '/app/Models/ActivityOccupantMaster.php',
     'App\\Models\\ActivitySession' => $baseDir . '/app/Models/ActivitySession.php',
     'App\\Models\\AdminSetting' => $baseDir . '/app/Models/AdminSetting.php',
+    'App\\Models\\AffilatedClubs' => $baseDir . '/app/Models/AffilatedClubs.php',
     'App\\Models\\AppModule' => $baseDir . '/app/Models/AppModule.php',
     'App\\Models\\BanquetBooking' => $baseDir . '/app/Models/BanquetBooking.php',
     'App\\Models\\BanquetBookingCharges' => $baseDir . '/app/Models/BanquetBookingCharges.php',

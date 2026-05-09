@@ -59,7 +59,8 @@ class EventController extends Controller
         ], 404);
         }
          $event = Event::orderBy('event_date','desc')->where('status','active')->select(['id','name','banner'])->first();
-         if($event->id){
+      
+         if(empty($event) && $event->id){
                return response()->json([
             'status' => true,
             'data' => [

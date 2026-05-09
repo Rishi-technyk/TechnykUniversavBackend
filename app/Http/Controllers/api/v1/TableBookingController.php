@@ -343,12 +343,38 @@ public function myUpComingBookings()
 
 public function ClubMenues(Request $request){
     
-  $menues=  DB::table('club_menus')->where('status','Active')->get();
+  $menues = DB::table('club_menus')
+      ->where('status', 'Active')
+      ->orderBy('id', 'asc')
+      ->get()
+      ->map(function ($menu) {
+          $menuData = (array) $menu;
+          $subtitle = $menuData['subTitle']
+              ?? $menuData['subtitle']
+              ?? $menuData['description']
+              ?? $menuData['details']
+              ?? null;
+
+          $menuData['subtitle'] = $subtitle;
+          $menuData['icon_url'] = !empty($menuData['icon'])
+              ? asset('mobileAPI/icons/' . ltrim((string) $menuData['icon'], '/'))
+              : null;
+          $menuData['cta_label'] = $menuData['cta_label'] ?? 'Open menu';
+          $menuData['module_type'] = $menuData['module_type']
+              ?? strtolower(str_replace(' ', '_', (string) ($menuData['name'] ?? 'club_menu')));
+
+          return $menuData;
+      })
+      ->values();
   
    return response()->json([
         'status' => true,
         'message' => 'Menues fetched successfully.',
         'data' => $menues,
+        'meta' => [
+            'total_menus' => $menues->count(),
+            'menus_with_icons' => $menues->filter(fn ($menu) => !empty($menu['icon_url']))->count(),
+        ],
     ], 200);
   
 }

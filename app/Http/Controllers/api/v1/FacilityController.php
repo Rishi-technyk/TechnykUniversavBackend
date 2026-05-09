@@ -92,7 +92,15 @@ public function getFavoritePlayers(Request $request)
     // Log the input
     Log::info('Fetching favorites for member ID: ' . $user->id, $request->all());
 
-    $query = DB::table('guest_infos')->where('member_id', $user->id);
+    $query = DB::table('guest_infos')
+        ->leftJoin('occupant_masters', 'guest_infos.occupant_id', '=', 'occupant_masters.id')
+        ->where('guest_infos.member_id', $user->id)
+        ->select(
+            'guest_infos.*',
+            'guest_infos.name as DisplayName',
+            'guest_infos.player_memberId as MemberID',
+            'occupant_masters.charge'
+        );
 
     // Apply filters if present
     if ($request->has('is_favorite')&& $request->is_favorite == true) {
@@ -107,11 +115,64 @@ public function getFavoritePlayers(Request $request)
         $query->where('occupant_id', 2);
     }
 
-    $players = $query->orderBy('is_favorite', 'desc')->get();
+    $players = $query
+        ->orderBy('guest_infos.is_favorite', 'desc')
+        ->orderBy('guest_infos.updated_at', 'desc')
+        ->get();
+
+    $favorites = $players
+        ->where('is_favorite', 1)
+        ->take(6)
+        ->values()
+        ->map(fn ($player) => $this->formatSuggestedPlayer($player, 'favorite'));
+
+    $recentPlayers = DB::table('game_booking_guests as guests')
+        ->join('game_bookings as bookings', 'guests.game_booking_id', '=', 'bookings.id')
+        ->leftJoin('guest_infos as saved_guest', function ($join) use ($user) {
+            $join->where('saved_guest.member_id', '=', $user->id)
+                ->where(function ($query) {
+                    $query->on('saved_guest.mobile', '=', 'guests.player_mobile')
+                        ->orOn('saved_guest.email', '=', 'guests.player_email')
+                        ->orOn('saved_guest.name', '=', 'guests.player_name');
+                });
+        })
+        ->where('bookings.memberID', $user->MemberID)
+        ->selectRaw('
+            MAX(guests.id) as id,
+            guests.player_name as DisplayName,
+            MAX(saved_guest.player_memberId) as MemberID,
+            guests.player_mobile as mobile,
+            guests.player_email as email,
+            guests.occupant_id as occupant_id,
+            guests.occupant_charge as charge,
+            COALESCE(MAX(saved_guest.is_favorite), 0) as is_favorite,
+            MAX(guests.created_at) as last_played_at,
+            COUNT(*) as played_count
+        ')
+        ->groupBy(
+            'guests.player_name',
+            'guests.player_mobile',
+            'guests.player_email',
+            'guests.occupant_id',
+            'guests.occupant_charge'
+        )
+        ->orderByRaw('MAX(guests.created_at) desc')
+        ->limit(8)
+        ->get()
+        ->map(fn ($player) => $this->formatSuggestedPlayer($player, 'recent'));
+
+    $guestPlayers = $players
+        ->where('occupant_id', 2)
+        ->take(8)
+        ->values()
+        ->map(fn ($player) => $this->formatSuggestedPlayer($player, 'guest'));
 
     return response()->json([
         'status' => true,
-        'data' => $players
+        'data' => $players,
+        'favorites' => $favorites,
+        'recent_players' => $recentPlayers,
+        'guest_players' => $guestPlayers,
     ]);
 }
 
@@ -174,6 +235,23 @@ $updated = DB::table('guest_infos')
             'message' => 'Liked successfully.'
         ], $updated > 0 ? 200 : 500);
     }
+}
+
+private function formatSuggestedPlayer($player, string $source): array
+{
+    return [
+        'id' => $player->id ?? null,
+        'DisplayName' => $player->DisplayName ?? $player->name ?? 'Player',
+        'MemberID' => $player->MemberID ?? $player->player_memberId ?? null,
+        'mobile' => $player->mobile ?? null,
+        'email' => $player->email ?? null,
+        'occupant_id' => (int) ($player->occupant_id ?? 2),
+        'charge' => (float) ($player->charge ?? 0),
+        'is_favorite' => (int) ($player->is_favorite ?? 0),
+        'played_count' => (int) ($player->played_count ?? 0),
+        'last_played_at' => $player->last_played_at ?? null,
+        'source' => $source,
+    ];
 }
  
 

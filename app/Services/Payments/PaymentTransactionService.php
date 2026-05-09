@@ -81,7 +81,9 @@ class PaymentTransactionService
             'checkout_type' => data_get($gatewayOrder, 'checkout.type'),
             'payment_url' => data_get($gatewayOrder, 'checkout.payment_url'),
             'razorpayKey' => data_get($gatewayOrder, 'checkout.key'),
-            'access_key' => data_get($gatewayOrder, 'checkout.session_id'),
+            'access_key' => data_get($gatewayOrder, 'checkout.access_key')
+                ?? data_get($gatewayOrder, 'checkout.accessKey')
+                ?? data_get($gatewayOrder, 'checkout.session_id'),
             'checkout' => $gatewayOrder['checkout'] ?? [],
             'status_reference' => $transaction->order_id,
             'status_endpoint' => 'member/payments/status/' . $transaction->order_id,
@@ -312,6 +314,25 @@ class PaymentTransactionService
             }
         }
 
+        $nestedTransactionResponse = $payload['transaction_response'] ?? [];
+        if (is_string($nestedTransactionResponse)) {
+            $decoded = json_decode($nestedTransactionResponse, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $nestedTransactionResponse = $decoded;
+            }
+        }
+
+        $easebuzzResult = $payload['result']
+            ?? ($nestedPaymentResponse['result'] ?? null)
+            ?? ($nestedTransactionResponse['result'] ?? null);
+
+        if (is_string($easebuzzResult)) {
+            $decoded = json_decode($easebuzzResult, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $easebuzzResult = $decoded;
+            }
+        }
+
         $reference = $payload['transaction_id']
             ?? $payload['merchant_order_id']
             ?? $payload['txnid']
@@ -320,6 +341,18 @@ class PaymentTransactionService
             ?? $payload['order_id']
             ?? ($nestedPaymentResponse['txnid'] ?? null)
             ?? ($nestedPaymentResponse['merchantTxnId'] ?? null);
+
+        if (!$reference && is_array($nestedTransactionResponse)) {
+            $reference = $nestedTransactionResponse['txnid']
+                ?? $nestedTransactionResponse['merchantTxnId']
+                ?? null;
+        }
+
+        if (!$reference && is_array($easebuzzResult)) {
+            $reference = $easebuzzResult['txnid']
+                ?? $easebuzzResult['merchantTxnId']
+                ?? null;
+        }
 
         if (!$reference) {
             return null;
@@ -333,7 +366,7 @@ class PaymentTransactionService
         $query = Transaction::query();
 
         if ($member) {
-            $query->where('member_id', $member->MemberID ?: $member->SC_ID);
+            $query->where('member_id', $member->SC_ID);
         }
 
         return $query->where(function ($builder) use ($reference) {

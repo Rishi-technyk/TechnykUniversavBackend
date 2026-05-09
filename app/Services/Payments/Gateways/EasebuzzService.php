@@ -84,6 +84,20 @@ class EasebuzzService extends AbstractPaymentGatewayService
             }
         }
 
+        if (is_array($result) && isset($result['result'])) {
+            $nestedResult = $result['result'];
+            if (is_string($nestedResult)) {
+                $decoded = json_decode($nestedResult, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $nestedResult = $decoded;
+                }
+            }
+
+            if (is_array($nestedResult)) {
+                $result = $nestedResult;
+            }
+        }
+
         $status = strtolower((string) ($result['status'] ?? $payload['status'] ?? 'failed'));
         $gatewayTransactionId = $result['easepayid'] ?? $result['bank_ref_num'] ?? $payload['payment_id'] ?? null;
         $hash = $result['hash'] ?? null;

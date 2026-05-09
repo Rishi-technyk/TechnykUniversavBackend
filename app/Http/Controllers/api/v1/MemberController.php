@@ -18,8 +18,6 @@ use App\Models\AdminSetting;
 
 use App\Models\AffilatedClubs;
 
-use App\Models\AffilatedClubsPhones;
-
 use App\Models\Event;
 
 use App\Models\CardClosingBalance;
@@ -1217,54 +1215,110 @@ public function getTransactionFilterNew(Request $request)
 }
 
 
+public function getAffilatedClubs()
+{
+    $clubs = AffilatedClubs::orderBy('name', 'ASC')->get();
 
+    $result = $clubs->map(function ($club) {
 
-    public function getAffilatedClubs()
+        $address = trim(implode(', ', array_filter([
+            $club->address,
+            $club->city,
+        ])));
 
-    {
+        return [
+            'club_id' => $club->id,
+            'city' => $address,
+            'city_name' => $club->city,
+            'name' => $club->name,
+            'address' => $club->address,
+            'code' => $club->code,
+            'email' => $club->email,
+            'website' => $club->website,
 
-        $clubs = AffilatedClubs:: // Eager load phones relationship
-orderBy('name', 'ASC')           // Order by club name
+            // ❌ phones removed
+            'phone_numbers' => [],
+            'phone_numbers_text' => null,
 
-            ->get();   
+            'has_contact_details' => !empty($club->email) || !empty($club->website),
 
-        $result = $clubs->map(function($club) {
+            'search_index' => strtolower(trim(implode(' ', array_filter([
+                $club->name,
+                $club->city,
+                $club->code,
+                $club->address,
+            ])))),
+        ];
+    })->values();
 
-            return [
+    $return_data['data'] = $result;
+    $return_data['meta'] = [
+        'total_clubs' => $result->count(),
+        'cities_covered' => $result->pluck('city_name')->filter()->unique()->count(),
+        'clubs_with_contact' => $result->where('has_contact_details', true)->count(),
+    ];
+    $return_data['message'] = '';
+    $return_data['status'] = true;
 
-                'club_id'       => $club->id,
+    return response()->json($return_data);
+}
 
-                'city'          => $club->address .' '. $club->city,
+    // public function getAffilatedClubs()
 
-                'name'          => $club->name,
+    // {
+    //     $clubs = AffilatedClubs::orderBy('name', 'ASC')->get();
+    //     $phonesByClub = DB::table('AffilatedClubsPhones')
+    //         ->select('club_id', 'phone')
+    //         ->whereNotNull('phone')
+    //         ->get()
+    //         ->groupBy('club_id');
 
-                'address'       => $club->address,
+    //     $result = $clubs->map(function ($club) use ($phonesByClub) {
+    //         $phones = collect($phonesByClub->get($club->id, []))
+    //             ->pluck('phone')
+    //             ->filter()
+    //             ->map(fn ($phone) => trim((string) $phone))
+    //             ->values();
 
-                'code'          => $club->code,
+    //         $address = trim(implode(', ', array_filter([
+    //             $club->address,
+    //             $club->city,
+    //         ])));
 
-                'email'         => $club->email,
+    //         return [
+    //             'club_id' => $club->id,
+    //             'city' => $address,
+    //             'city_name' => $club->city,
+    //             'name' => $club->name,
+    //             'address' => $club->address,
+    //             'code' => $club->code,
+    //             'email' => $club->email,
+    //             'website' => $club->website,
+    //             'phone_numbers' => $phones,
+    //             'phone_numbers_text' => $phones->implode(', '),
+    //             'has_contact_details' => $phones->isNotEmpty() || !empty($club->email) || !empty($club->website),
+    //             'search_index' => strtolower(trim(implode(' ', array_filter([
+    //                 $club->name,
+    //                 $club->city,
+    //                 $club->code,
+    //                 $club->address,
+    //                 $phones->implode(' '),
+    //             ])))),
+    //         ];
+    //     })->values();
 
-                'website'       => $club->website,
+    //     $return_data['data'] = $result;
+    //     $return_data['meta'] = [
+    //         'total_clubs' => $result->count(),
+    //         'cities_covered' => $result->pluck('city_name')->filter()->unique()->count(),
+    //         'clubs_with_contact' => $result->where('has_contact_details', true)->count(),
+    //     ];
+    //     $return_data['message'] = '';
+    //     $return_data['status'] = true;
 
-                // Concatenate phone numbers from the related phones model
+    //     return response()->json($return_data);
 
-                'phone_numbers' => $club->phones,
-
-                // 'phone_numbers' => $club->phones->pluck('phone')->implode(', '),
-
-            ];
-
-        });
-
-        $return_data['data'] = $result;
-
-        $return_data['message'] = '';
-
-        $return_data['status'] = true;
-
-        return response()->json($return_data);
-
-    }
+    // }
 
     
 
@@ -1801,35 +1855,6 @@ $serviceAccountPath = storage_path('app/firebase/holidayclub-service-account.jso
     }
 
 
- 
-    
-    private function verifyPaymentFromRazorpay($paymentId, $orderId)
-{
-    if (!$paymentId) {
-        return false;
-    }
-
-    try {
-        $api = new \Razorpay\Api\Api(
-            config('services.razorpay.key'),
-            config('services.razorpay.secret')
-        );
-
-        $payment = $api->payment->fetch($paymentId);
-\Log::info($payment);
-        return (
-            $payment->status === 'captured' &&
-            $payment->order_id === $orderId
-        );
-
-    } catch (\Exception $e) {
-        \Log::error('Razorpay verification failed', [
-            'payment_id' => $paymentId,
-            'error' => $e->getMessage()
-        ]);
-        return false;
-    }
-}
 
 
 public function createPayOrder(Request $request)
@@ -2030,7 +2055,10 @@ public function processPayment(Request $request, FCMService $fcm)
 
     } catch (\Exception $e) {
         \Log::error('Card recharge verify error', [
-            'error' => $e->getMessage()
+            'error' => $e->getMessage(),
+              'file' => $e->getFile(),
+    'line' => $e->getLine(),
+    'trace' => $e->getTraceAsString(),
         ]);
 
         return response()->json([

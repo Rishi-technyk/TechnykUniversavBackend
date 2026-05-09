@@ -745,6 +745,7 @@ class ComposerStaticInit6ae36129c067cb5a7ddee0206a2ea7ca
         'App\\Models\\ActivityOccupantMaster' => __DIR__ . '/../..' . '/app/Models/ActivityOccupantMaster.php',
         'App\\Models\\ActivitySession' => __DIR__ . '/../..' . '/app/Models/ActivitySession.php',
         'App\\Models\\AdminSetting' => __DIR__ . '/../..' . '/app/Models/AdminSetting.php',
+        'App\\Models\\AffilatedClubs' => __DIR__ . '/../..' . '/app/Models/AffilatedClubs.php',
         'App\\Models\\AppModule' => __DIR__ . '/../..' . '/app/Models/AppModule.php',
         'App\\Models\\BanquetBooking' => __DIR__ . '/../..' . '/app/Models/BanquetBooking.php',
         'App\\Models\\BanquetBookingCharges' => __DIR__ . '/../..' . '/app/Models/BanquetBookingCharges.php',

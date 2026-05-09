@@ -62,6 +62,20 @@ public function getMMRSettings()
         ? $start->diffInDays($now) + 1
         : null;
 
+    $memberRegistrationCount = $user
+        ? MMRRegistration::where('member_id', $user->id)->count()
+        : 0;
+
+    $latestRegistration = $user
+        ? MMRRegistration::where('member_id', $user->id)
+            ->latest('created_at')
+            ->first()
+        : null;
+
+    $completionRatio = $totalDays > 0 && $currentDayNumber
+        ? min(100, (int) round(($currentDayNumber / $totalDays) * 100))
+        : 0;
+
     /* ------------------------------
        4️⃣ RESPONSE
     ------------------------------*/
@@ -78,6 +92,20 @@ public function getMMRSettings()
             'days_remaining'     => $daysRemaining,
             'current_day'        => $currentDayNumber,
             'today'              => Carbon::today()->toDateString(),
+            'window_status'      => $alreadyRegistered
+                ? 'registered'
+                : ($isOpen ? 'open' : 'closed'),
+            'next_action_label'  => $alreadyRegistered
+                ? 'Registered'
+                : ($isOpen ? 'Register now' : 'Registration closed'),
+            'progress_percent'   => $completionRatio,
+            'summary'            => [
+                'total_registrations' => $memberRegistrationCount,
+                'latest_registration_at' => optional($latestRegistration?->created_at)->toDateTimeString(),
+                'latest_registration_window' => $latestRegistration
+                    ? Carbon::parse($latestRegistration->start_date)->format('d M') . ' - ' . Carbon::parse($latestRegistration->end_date)->format('d M Y')
+                    : null,
+            ],
             'reg_message'        => $alreadyRegistered
                 ? 'You have already registered for this registration window.'
                 : null,
@@ -154,7 +182,7 @@ public function store(Request $request)
 }
 
     
-    public function history(Request $request)
+public function history(Request $request)
 {
     $user = auth()->user();
 
@@ -171,9 +199,28 @@ public function store(Request $request)
         ->orderBy('start_date', 'desc')
         ->paginate($perPage);
 
+    $registrations->getCollection()->transform(function ($registration) {
+        $registration->window_label = Carbon::parse($registration->start_date)->format('d M')
+            . ' - '
+            . Carbon::parse($registration->end_date)->format('d M Y');
+        $registration->registered_at = optional($registration->created_at)->format('d M Y, h:i A');
+        $registration->status_label = Carbon::parse($registration->end_date)->endOfDay()->isPast()
+            ? 'Completed window'
+            : 'Active window';
+        $registration->duration_days = Carbon::parse($registration->start_date)
+            ->diffInDays(Carbon::parse($registration->end_date)) + 1;
+
+        return $registration;
+    });
+
     return response()->json([
         'status' => true,
-        'data' => $registrations
+        'data' => $registrations,
+        'meta' => [
+            'total_registrations' => $registrations->total(),
+            'current_page' => $registrations->currentPage(),
+            'last_page' => $registrations->lastPage(),
+        ],
     ]);
 }
 

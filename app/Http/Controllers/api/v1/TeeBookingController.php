@@ -14,8 +14,6 @@ use Illuminate\Support\Facades\Validator;
 
 use App\Models\AffilatedClubs;
 
-use App\Models\AffilatedClubsPhones;
-
 use App\Models\CardClosingBalance;
 
 use App\Models\CustomerStatement;
